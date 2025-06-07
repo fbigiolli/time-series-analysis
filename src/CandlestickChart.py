@@ -78,6 +78,7 @@ class CandlestickChart:
             'figratio': (16, 9),
             'figscale': 1.5,
             'tight_layout': True,
+            'warn_too_much_data': 2000,
             'returnfig': True
         }
 
