@@ -37,17 +37,33 @@ class TimeSeries:
         coef = np.polyfit(self.time, self.values, grade)
         return np.polyval(coef, self.time)
 
+    def low_pass_filter(self, cutoff_freq: float, freq_per_year: int = 365) -> np.ndarray:
+        """
+        Filtro pasa bajos FFT: conserva solo frecuencias <= cutoff_freq (ciclos/año).
+        """
+        _, _, fft_result, fft_freq = self.yearly_frequency_spectrum(freq_per_year)
+
+        mask = np.abs(fft_freq) <= cutoff_freq
+        filtered_fft = fft_result * mask
+        filtered_values = np.fft.ifft(filtered_fft).real
+
+        return filtered_values
+
     # --- --- --- Frequency Domain operations --- --- ---
-    def yearly_frequency_spectrum(self, freq_per_year=365):
+    def yearly_frequency_spectrum(self, freq_per_year=365, on_detrended = True, on_detrended_grade = 2):
         """
         Calcula el espectro de frecuencias (en ciclos por año) tomando `freq_per_year` como
-        el número de observaciones por año (365 si es diaria, 12 si es mensual, etc.)
+        el número de observaciones por año (365 si es diaria, 12 si es mensual, etc.).
+
+        El parámetro `on_detrended` determina si se aplica sobre la serie hecha estacionaria
         """
         n = len(self.values)
         dt = 1 / freq_per_year  # intervalo en años entre observaciones
 
         # FFT y frecuencias en ciclos por año
-        fft_result = np.fft.fft(self.values)
+        fft_result = np.fft.fft(
+            self.detrend_with_regression_fitting(on_detrended_grade).values if on_detrended else self.values
+        )
         fft_freq = np.fft.fftfreq(n, d=dt)
         magnitudes = np.abs(fft_result) / n
 
@@ -56,7 +72,7 @@ class TimeSeries:
         frecuencias_pos = fft_freq[mask]
         magnitudes_pos = magnitudes[mask]
 
-        return frecuencias_pos, magnitudes_pos
+        return frecuencias_pos, magnitudes_pos, fft_result, fft_freq
 
     # --- --- --- Stationarity check --- --- ---
 

@@ -25,8 +25,17 @@ class TimeSeriesPlot:
         self.ax.plot(self.ts.dates, tendency, label=f'Tendencia (grado {grade})', color=color, linestyle=linestyle)
         self._set_axes_for_time_domain()
 
-    def add_filtered(self, serie, corte, color='blue'):
-        self.ax.plot(self.ts.dates, serie, label=f'Filtrada (corte={corte})', color=color, linewidth=2)
+    def add_low_pass_filtered(self, cutoff_freq: float, sampling_rate: float = 365):
+        """
+        Agrega la serie suavizada con un filtro pasa bajos FFT.
+        """
+        filtered_values = self.ts.low_pass_filter(cutoff_freq, sampling_rate)
+
+        self.ax.plot(
+            self.ts.dates,
+            filtered_values,
+            label=f'Filtrada (corte={cutoff_freq:.2f})'
+        )
         self._set_axes_for_time_domain()
 
     def add_grid(self):
@@ -43,7 +52,7 @@ class TimeSeriesPlot:
     # Crear nuevo TimeSeriesPlot para esto, no usar el mismo que para dom de tiempo.
 
     def add_yearly_frequency_spectrum(self, low_freqs_limit=50, ticks_freq= 1, color='purple'):
-        frecuencias_pos, magnitudes_pos = self.ts.yearly_frequency_spectrum(365)
+        frecuencias_pos, magnitudes_pos, _, _ = self.ts.yearly_frequency_spectrum(365)
 
         # Crear nueva figura para este plot
         self.ax.plot(
