@@ -1,13 +1,21 @@
 import warnings
 import numpy as np
+import pandas as pd
 from statsmodels.tools.sm_exceptions import InterpolationWarning
 from statsmodels.tsa.stattools import adfuller, kpss
 
 class TimeSeries:
-    def __init__(self, dates, values):
+    def __init__(self, dates, values, open=None, high=None, low=None):
+        if open is None:
+            open = []
         self.values = values
         self.dates = dates
         self.time = np.arange(len(dates))
+
+        self.open = open
+        self.high = high
+        self.low = low
+        self.close = self.values # alias para mayor claridad
 
     # --- --- --- Time Domain operations --- --- ---
 
@@ -48,6 +56,23 @@ class TimeSeries:
         filtered_values = np.fft.ifft(filtered_fft).real
 
         return filtered_values
+
+    def ema(self, window):
+        """
+        Retorna una nueva lista o array con la media móvil exponencial (EMA).
+        """
+        return pd.Series(self.values).ewm(span=window, adjust=False).mean().values
+
+    def df_for_candlestick(self) -> pd.DataFrame:
+        df = pd.DataFrame({
+            'Date': self.dates,
+            'Open': self.open,
+            'High': self.high,
+            'Low': self.low,
+            'Close': self.close
+        })
+        df.set_index('Date', inplace=True)
+        return df
 
     # --- --- --- Frequency Domain operations --- --- ---
     def yearly_frequency_spectrum(self, freq_per_year=365, on_detrended = True, on_detrended_grade = 2):

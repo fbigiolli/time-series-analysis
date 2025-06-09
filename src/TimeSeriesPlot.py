@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from matplotlib.ticker import MaxNLocator, MultipleLocator
+import mplfinance as mpf
 
 from src import TimeSeries
 
@@ -36,6 +38,31 @@ class TimeSeriesPlot:
             filtered_values,
             label=f'Filtrada (corte={cutoff_freq:.2f})'
         )
+        self._set_axes_for_time_domain()
+
+    def add_ema(self, window):
+        """
+        Agrega una media móvil exponencial (EMA).
+        """
+        ema_values = self.ts.ema(window)
+
+        # Asegurar que tenga la misma longitud que las fechas
+        min_len = min(len(ema_values), len(self.ts.dates))
+        ema_values = ema_values[:min_len]
+        dates = self.ts.dates[:min_len]
+
+        self.ax.plot(dates, ema_values, linestyle='--', label=f'EMA ({window})')
+        self._set_axes_for_time_domain()
+
+    def add_candlestick(self):
+        """
+        Agrega un gráfico de velas japonesas.
+        Se espera que TimeSeries tenga atributos: dates, open, high, low, close.
+        """
+        df = self.ts.df_for_candlestick()
+
+        mpf.plot(df, type='candle', style='charles', ax=self.ax, show_nontrading=True)
+        self.ax.set_title('Gráfico de Velas Japonesas')
         self._set_axes_for_time_domain()
 
     def add_grid(self):
