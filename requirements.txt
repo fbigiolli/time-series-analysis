@@ -1,6 +1,7 @@
-yfinance
-matplotlib
-pandas
-mplfinance
-numpy
-statsmodels
+yfinance~=0.2.61
+matplotlib~=3.10.3
+pandas~=2.3.0
+mplfinance~=0.12.10b0
+numpy~=2.2.6
+statsmodels~=0.14.4
+scipy~=1.15.3
