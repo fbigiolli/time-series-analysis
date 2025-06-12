@@ -17,12 +17,12 @@ class TimeSeriesPlot:
         self.ax.plot(self.ts.dates, self.ts.values, label="Original", color=color)
         self._set_axes_for_time_domain()
 
-    def add_detrended(self, grade=1, color='gray'):
+    def add_detrended(self, grade, color='#696969'):
         ts_detrended = self.ts.detrend_with_regression_fitting(grade)
         self.ax.plot(self.ts.dates, ts_detrended.values, label="Detrended", color=color)
         self._set_axes_for_time_domain()
 
-    def add_tendency(self, grade=1, color='black', linestyle='--'):
+    def add_tendency(self, grade, color='black', linestyle='--'):
         tendency = self.ts.tendency_with_regression_fitting(grade)
         self.ax.plot(self.ts.dates, tendency, label=f'Tendencia (grado {grade})', color=color, linestyle=linestyle)
         self._set_axes_for_time_domain()
@@ -37,6 +37,19 @@ class TimeSeriesPlot:
             self.ts.dates,
             filtered_values,
             label=f'Filtrada (corte={cutoff_freq:.2f})'
+        )
+        self._set_axes_for_time_domain()
+
+    def add_band_pass_filtered(self, low_cutoff: float, high_cutoff: float, freq_per_year: int = 365):
+        """
+        Agrega la serie suavizada con un filtro pasa bajos FFT.
+        """
+        filtered_values = self.ts.band_pass_filter(low_cutoff, high_cutoff, freq_per_year)
+
+        self.ax.plot(
+            self.ts.dates,
+            filtered_values,
+            label=f'Filtrada (cortes entre [{low_cutoff:.2f}, {high_cutoff:.2f}])'
         )
         self._set_axes_for_time_domain()
 
@@ -74,6 +87,23 @@ class TimeSeriesPlot:
     def show(self):
         self.ax.legend()
         plt.show()
+
+    # ---
+    def add_cross_correlation_plot(self, other: "TimeSeries", max_lag: int = 30):
+        """
+        Plotea la correlación cruzada con otra serie temporal.
+        """
+        corr, lags = self.ts.cross_correlation(other, max_lag)
+        N = len(self.ts.values)
+
+        self.ax.bar(lags, corr, width=1)
+        self.ax.axhline(0, color='black')
+        self.ax.axhline(2 / np.sqrt(N), color='purple', linestyle='--', label='±2/sqrt(N)')
+        self.ax.axhline(-2 / np.sqrt(N), color='purple', linestyle='--')
+        self.ax.set_title(f'Correlación cruzada ({self.ts.__class__.__name__} vs {other.__class__.__name__})')
+        self.ax.set_xlabel('Lag')
+        self.ax.set_ylabel('Correlación')
+        self.ax.grid(True)
 
     # --- --- Adición de plots en Dominio de Frecuencia --- ---
     # Crear nuevo TimeSeriesPlot para esto, no usar el mismo que para dom de tiempo.

@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from statsmodels.tools.sm_exceptions import InterpolationWarning
 from statsmodels.tsa.stattools import adfuller, kpss
+from scipy.signal import correlate
 
 class TimeSeries:
     def __init__(self, dates, values, open=None, high=None, low=None):
@@ -17,7 +18,7 @@ class TimeSeries:
         self.low = low
         self.close = self.values # alias para mayor claridad
 
-    # --- --- --- Time Domain operations --- --- ---
+    # --- --- --- Trend and Regression --- --- ---
 
     def detrend_with_regression_fitting(self, grade: int = 1) -> "TimeSeries":
         """
@@ -45,6 +46,8 @@ class TimeSeries:
         coef = np.polyfit(self.time, self.values, grade)
         return np.polyval(coef, self.time)
 
+    # --- --- --- Filtros --- --- ---
+
     def low_pass_filter(self, cutoff_freq: float, freq_per_year: int = 365) -> np.ndarray:
         """
         Filtro pasa bajos FFT: conserva solo frecuencias <= cutoff_freq (ciclos/año).
@@ -52,6 +55,19 @@ class TimeSeries:
         _, _, fft_result, fft_freq = self.yearly_frequency_spectrum(freq_per_year)
 
         mask = np.abs(fft_freq) <= cutoff_freq
+        filtered_fft = fft_result * mask
+        filtered_values = np.fft.ifft(filtered_fft).real
+
+        return filtered_values
+
+    def band_pass_filter(self, low_cutoff: float, high_cutoff: float, freq_per_year: int = 365) -> np.ndarray:
+        """
+        Filtro pasa bandas FFT: conserva frecuencias entre low_cutoff y high_cutoff (ciclos/año).
+        """
+        _, _, fft_result, fft_freq = self.yearly_frequency_spectrum(freq_per_year)
+
+        # Crear máscara de pasa banda
+        mask = (np.abs(fft_freq) >= low_cutoff) & (np.abs(fft_freq) <= high_cutoff)
         filtered_fft = fft_result * mask
         filtered_values = np.fft.ifft(filtered_fft).real
 
@@ -73,6 +89,31 @@ class TimeSeries:
         })
         df.set_index('Date', inplace=True)
         return df
+
+    # --- --- --- Operaciones con otras series --- --- ---
+    def cross_correlation(self, other: "TimeSeries", max_lag: int = None) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Calcula la correlación cruzada normalizada entre esta serie y otra.
+        """
+        x = self.values
+        y = other.values
+        N = min(len(x), len(y))  # Asegurar misma longitud
+        x = x[:N]
+        y = y[:N]
+
+        x_centered = x - np.mean(x)
+        y_centered = y - np.mean(y)
+
+        corr = correlate(x_centered, y_centered, mode='full')
+        corr_normalized = corr / (np.std(x) * np.std(y) * N)
+        lags = np.arange(-N + 1, N)
+
+        if max_lag is not None:
+            mask = (lags >= -max_lag) & (lags <= max_lag)
+            corr_normalized = corr_normalized[mask]
+            lags = lags[mask]
+
+        return corr_normalized, lags
 
     # --- --- --- Frequency Domain operations --- --- ---
     def yearly_frequency_spectrum(self, freq_per_year=365, on_detrended = True, on_detrended_grade = 2):
