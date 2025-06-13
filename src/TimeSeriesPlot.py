@@ -11,20 +11,28 @@ class TimeSeriesPlot:
         self.ts = ts
         self.fig, self.ax = plt.subplots(figsize=(14, 6))
 
-    # --- --- Adición de plots en Dominio de Tiempo --- ---
+    # --- --- Dominio de Tiempo --- ---
 
     def add_original(self, color='orange'):
-        self.ax.plot(self.ts.dates, self.ts.values, label="Original", color=color)
+        self.ax.plot(self.ts.dates, self.ts.values, label=self.ts.name, color=color)
         self._set_axes_for_time_domain()
+
+    def add_another(self, other_ts: "TimeSeries"):
+        """
+        Agrega otra serie temporal al gráfico actual.
+        """
+        self.ax.plot(other_ts.dates, other_ts.values, label=other_ts.name)
+        self._set_axes_for_time_domain()
+
 
     def add_detrended(self, grade, color='#696969'):
         ts_detrended = self.ts.detrend_with_regression_fitting(grade)
-        self.ax.plot(self.ts.dates, ts_detrended.values, label="Detrended", color=color)
+        self.ax.plot(self.ts.dates, ts_detrended.values, label=ts_detrended.name, color=color)
         self._set_axes_for_time_domain()
 
     def add_tendency(self, grade, color='black', linestyle='--'):
         tendency = self.ts.tendency_with_regression_fitting(grade)
-        self.ax.plot(self.ts.dates, tendency, label=f'Tendencia (grado {grade})', color=color, linestyle=linestyle)
+        self.ax.plot(self.ts.dates, tendency, label=f'Tendencia de {self.ts.name} (grado {grade})', color=color, linestyle=linestyle)
         self._set_axes_for_time_domain()
 
     def add_low_pass_filtered(self, cutoff_freq: float, sampling_rate: float = 365):
@@ -36,7 +44,7 @@ class TimeSeriesPlot:
         self.ax.plot(
             self.ts.dates,
             filtered_values,
-            label=f'Filtrada (corte={cutoff_freq:.2f})'
+            label=f'{self.ts.name} filtrada pasa-bajos (corte={cutoff_freq:.2f})'
         )
         self._set_axes_for_time_domain()
 
@@ -49,7 +57,7 @@ class TimeSeriesPlot:
         self.ax.plot(
             self.ts.dates,
             filtered_values,
-            label=f'Filtrada (cortes entre [{low_cutoff:.2f}, {high_cutoff:.2f}])'
+            label=f'{self.ts.name} filtrada (cortes entre [{low_cutoff:.2f}, {high_cutoff:.2f}])'
         )
         self._set_axes_for_time_domain()
 
@@ -64,7 +72,7 @@ class TimeSeriesPlot:
         ema_values = ema_values[:min_len]
         dates = self.ts.dates[:min_len]
 
-        self.ax.plot(dates, ema_values, linestyle='--', label=f'EMA ({window})')
+        self.ax.plot(dates, ema_values, linestyle='--', label=f'{self.ts.name} EMA ({window})')
         self._set_axes_for_time_domain()
 
     def add_candlestick(self):
@@ -88,24 +96,27 @@ class TimeSeriesPlot:
         self.ax.legend()
         plt.show()
 
-    # ---
+    # --- --- Correlación cruzada --- ---
     def add_cross_correlation_plot(self, other: "TimeSeries", max_lag: int = 30):
         """
-        Plotea la correlación cruzada con otra serie temporal.
+        Plotea la correlación cruzada con otra serie temporal
         """
         corr, lags = self.ts.cross_correlation(other, max_lag)
         N = len(self.ts.values)
+        signif = 2 / np.sqrt(N)
 
-        self.ax.bar(lags, corr, width=1)
-        self.ax.axhline(0, color='black')
-        self.ax.axhline(2 / np.sqrt(N), color='purple', linestyle='--', label='±2/sqrt(N)')
-        self.ax.axhline(-2 / np.sqrt(N), color='purple', linestyle='--')
-        self.ax.set_title(f'Correlación cruzada ({self.ts.__class__.__name__} vs {other.__class__.__name__})')
+        self.ax.bar(lags, corr, width=0.6, color='tab:blue', edgecolor='black', linewidth=0.5, alpha=0.8, label='Correlaciones de Pearson')
+
+        # Bandas de significancia sombreadas
+        self.ax.fill_between(lags, signif, -signif, color='purple', alpha=0.2, label='Umbral de significancia')
+
+        self.ax.set_title(f'Correlación cruzada ({self.ts.name} vs {other.name})')
         self.ax.set_xlabel('Lag')
         self.ax.set_ylabel('Correlación')
         self.ax.grid(True)
+        self.ax.legend()
 
-    # --- --- Adición de plots en Dominio de Frecuencia --- ---
+    # --- --- Dominio de Frecuencia --- ---
     # Crear nuevo TimeSeriesPlot para esto, no usar el mismo que para dom de tiempo.
 
     def add_yearly_frequency_spectrum(self, low_freqs_limit=50, ticks_freq= 1, color='purple'):
@@ -116,7 +127,7 @@ class TimeSeriesPlot:
             frecuencias_pos[:low_freqs_limit],
             magnitudes_pos[:low_freqs_limit],
             color=color,
-            label=f'Frecuencia'
+            label=f'Frecuencia {self.ts.name} (ciclos/año)'
         )
         self.ax.set_title('Espectro de Frecuencias (ciclos/año)')
         self.ax.xaxis.set_major_locator(MultipleLocator(ticks_freq))

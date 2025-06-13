@@ -6,9 +6,8 @@ from statsmodels.tsa.stattools import adfuller, kpss
 from scipy.signal import correlate
 
 class TimeSeries:
-    def __init__(self, dates, values, open=None, high=None, low=None):
-        if open is None:
-            open = []
+    def __init__(self, name, dates, values, open=None, high=None, low=None):
+        self.name = name
         self.values = values
         self.dates = dates
         self.time = np.arange(len(dates))
@@ -26,7 +25,7 @@ class TimeSeries:
         """
         tendency = self.tendency_with_regression_fitting(grade)
         detrended = self.values - tendency
-        return TimeSeries(self.dates, detrended)
+        return TimeSeries(f'{self.name} detrended', self.dates, detrended)
 
     def detrend_with_differencing(self, times: int = 1) -> "TimeSeries":
         """
@@ -37,7 +36,7 @@ class TimeSeries:
         for _ in range(times):
             detrended = np.diff(detrended)
         new_date = self.dates[times:] # porque np.diff lo acorta
-        return TimeSeries(new_date, detrended)
+        return TimeSeries(f'{self.name} detrended', new_date, detrended)
 
     def tendency_with_regression_fitting(self, grade: int = 1) -> np.array:
         """
@@ -45,6 +44,15 @@ class TimeSeries:
         """
         coef = np.polyfit(self.time, self.values, grade)
         return np.polyval(coef, self.time)
+
+    def normalize_base100(self) -> "TimeSeries":
+        """
+        Devuelve una nueva TimeSeries con los valores normalizados, base 100
+        """
+        base_value = self.values.iloc[0]
+        normalized_values = (self.values / base_value) * 100
+
+        return TimeSeries(name=f"{self.name} (Base 100)", dates=self.dates, values=normalized_values,)
 
     # --- --- --- Filtros --- --- ---
 
