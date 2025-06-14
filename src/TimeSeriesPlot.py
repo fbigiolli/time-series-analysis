@@ -13,8 +13,8 @@ class TimeSeriesPlot:
 
     # --- --- Dominio de Tiempo --- ---
 
-    def add_original(self, color='orange'):
-        self.ax.plot(self.ts.dates, self.ts.values, label=self.ts.name, color=color)
+    def add_original(self, color='orange', alpha=1):
+        self.ax.plot(self.ts.dates, self.ts.values, label=self.ts.name, color=color, alpha=alpha)
         self._set_axes_for_time_domain()
 
     def add_another(self, other_ts: "TimeSeries"):
@@ -25,9 +25,9 @@ class TimeSeriesPlot:
         self._set_axes_for_time_domain()
 
 
-    def add_detrended(self, grade, color='#696969'):
+    def add_detrended(self, grade, color='#696969', alpha=1):
         ts_detrended = self.ts.detrend_with_regression_fitting(grade)
-        self.ax.plot(self.ts.dates, ts_detrended.values, label=ts_detrended.name, color=color)
+        self.ax.plot(self.ts.dates, ts_detrended.values, label=ts_detrended.name, color=color, alpha=alpha)
         self._set_axes_for_time_domain()
 
     def add_tendency(self, grade, color='black', linestyle='--'):
@@ -35,18 +35,20 @@ class TimeSeriesPlot:
         self.ax.plot(self.ts.dates, tendency, label=f'Tendencia de {self.ts.name} (grado {grade})', color=color, linestyle=linestyle)
         self._set_axes_for_time_domain()
 
-    def add_low_pass_filtered(self, cutoff_freq: float, sampling_rate: float = 365,  linestyle='-'):
+    def add_low_pass_filtered(self, cutoff_freq: float, sampling_rate: float = 365, linestyle='-', color=None):
         """
         Agrega la serie suavizada con un filtro pasa bajos FFT.
         """
         filtered_values = self.ts.low_pass_filter(cutoff_freq, sampling_rate)
 
-        self.ax.plot(
-            self.ts.dates,
-            filtered_values,
-            label=f'{self.ts.name} filtrada pasa-bajos (corte={cutoff_freq:.2f})',
-            linestyle=linestyle,
-        )
+        plot_kwargs = {
+            'label': f'{self.ts.name} filtrada pasa-bajos (corte={cutoff_freq:.2f})',
+            'linestyle': linestyle,
+        }
+        if color is not None:
+            plot_kwargs['color'] = color
+
+        self.ax.plot(self.ts.dates, filtered_values, **plot_kwargs)
         self._set_axes_for_time_domain()
 
     def add_band_pass_filtered(self, low_cutoff: float, high_cutoff: float, freq_per_year: int = 365,  linestyle='-'):
