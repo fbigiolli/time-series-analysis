@@ -35,7 +35,7 @@ class TimeSeriesPlot:
         self.ax.plot(self.ts.dates, tendency, label=f'Tendencia de {self.ts.name} (grado {grade})', color=color, linestyle=linestyle)
         self._set_axes_for_time_domain()
 
-    def add_low_pass_filtered(self, cutoff_freq: float, sampling_rate: float = 365):
+    def add_low_pass_filtered(self, cutoff_freq: float, sampling_rate: float = 365,  linestyle='-'):
         """
         Agrega la serie suavizada con un filtro pasa bajos FFT.
         """
@@ -44,11 +44,12 @@ class TimeSeriesPlot:
         self.ax.plot(
             self.ts.dates,
             filtered_values,
-            label=f'{self.ts.name} filtrada pasa-bajos (corte={cutoff_freq:.2f})'
+            label=f'{self.ts.name} filtrada pasa-bajos (corte={cutoff_freq:.2f})',
+            linestyle=linestyle,
         )
         self._set_axes_for_time_domain()
 
-    def add_band_pass_filtered(self, low_cutoff: float, high_cutoff: float, freq_per_year: int = 365):
+    def add_band_pass_filtered(self, low_cutoff: float, high_cutoff: float, freq_per_year: int = 365,  linestyle='-'):
         """
         Agrega la serie suavizada con un filtro pasa bajos FFT.
         """
@@ -57,11 +58,12 @@ class TimeSeriesPlot:
         self.ax.plot(
             self.ts.dates,
             filtered_values,
-            label=f'{self.ts.name} filtrada (cortes entre [{low_cutoff:.2f}, {high_cutoff:.2f}])'
+            label=f'{self.ts.name} filtrada (cortes entre [{low_cutoff:.2f}, {high_cutoff:.2f}])',
+            linestyle=linestyle
         )
         self._set_axes_for_time_domain()
 
-    def add_ema(self, window):
+    def add_ema(self, window, linestyle='-'):
         """
         Agrega una media móvil exponencial (EMA).
         """
@@ -72,7 +74,7 @@ class TimeSeriesPlot:
         ema_values = ema_values[:min_len]
         dates = self.ts.dates[:min_len]
 
-        self.ax.plot(dates, ema_values, linestyle='--', label=f'{self.ts.name} EMA ({window})')
+        self.ax.plot(dates, ema_values, linestyle=linestyle, label=f'{self.ts.name} EMA ({window})')
         self._set_axes_for_time_domain()
 
     def add_candlestick(self):
@@ -83,6 +85,8 @@ class TimeSeriesPlot:
         df = self.ts.df_for_candlestick()
 
         mpf.plot(df, type='candle', style='charles', ax=self.ax, show_nontrading=True)
+        self.ax.plot([], [], label='Velas Japonesas', color='black')
+
         self.ax.set_title('Gráfico de Velas Japonesas')
         self._set_axes_for_time_domain()
 
