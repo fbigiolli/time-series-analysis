@@ -17,11 +17,11 @@ class TimeSeriesPlot:
         self.ax.plot(self.ts.dates, self.ts.values, label=self.ts.name, color=color, alpha=alpha)
         self._set_axes_for_time_domain()
 
-    def add_another(self, other_ts: "TimeSeries"):
+    def add_another(self, other_ts: "TimeSeries", color='red'):
         """
         Agrega otra serie temporal al gráfico actual.
         """
-        self.ax.plot(other_ts.dates, other_ts.values, label=other_ts.name)
+        self.ax.plot(other_ts.dates, other_ts.values, label=other_ts.name, color=color)
         self._set_axes_for_time_domain()
 
 

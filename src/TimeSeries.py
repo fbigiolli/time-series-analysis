@@ -27,10 +27,10 @@ class TimeSeries:
         detrended = self.values - tendency
         return TimeSeries(f'{self.name} detrended', self.dates, detrended)
 
-    def detrend_with_differencing(self, times: int = 1) -> "TimeSeries":
+    def differentiate(self, times: int = 1) -> "TimeSeries":
         """
-        Eliminación de tendencia mediante diferenciación de `times` veces, con el objetivo de
-        hacer estacionaria una serie (por ej. para obtener el parámetro `d` del modelo ARIMA)
+        Hacer diferencia de cada valor con su anterior, para hacer seire estacionaria
+        (por ej. para obtener el parámetro `d` del modelo ARIMA)
         """
         detrended = self.values.copy()
         for _ in range(times):
