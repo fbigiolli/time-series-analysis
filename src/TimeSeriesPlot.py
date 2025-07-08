@@ -13,8 +13,8 @@ class TimeSeriesPlot:
 
     # --- --- Dominio de Tiempo --- ---
 
-    def add_original(self, color='orange', alpha=1):
-        self.ax.plot(self.ts.dates, self.ts.values, label=self.ts.name, color=color, alpha=alpha)
+    def add_original(self, **kwargs):
+        self.ax.plot(self.ts.dates, self.ts.values, label=self.ts.name, **kwargs)
         self._set_axes_for_time_domain()
 
     def add_another(self, other_ts: "TimeSeries", color='red'):
@@ -97,6 +97,12 @@ class TimeSeriesPlot:
 
     def set_title(self, title):
         self.ax.set_title(title)
+
+    def set_lims(self, xlim=None, ylim=None):
+        if xlim is not None:
+            self.ax.set_xlim(xlim)
+        if ylim is not None:
+            self.ax.set_ylim(ylim)
         
     def show(self):
         self.ax.legend()
@@ -125,8 +131,8 @@ class TimeSeriesPlot:
     # --- --- Dominio de Frecuencia --- ---
     # Crear nuevo TimeSeriesPlot para esto, no usar el mismo que para dom de tiempo.
 
-    def add_yearly_frequency_spectrum(self, low_freqs_limit=50, ticks_freq= 1, color='purple'):
-        frecuencias_pos, magnitudes_pos, _, _ = self.ts.yearly_frequency_spectrum(365)
+    def add_yearly_frequency_spectrum(self, low_freqs_limit=50, ticks_freq= 1, color='purple', on_detrended = True):
+        frecuencias_pos, magnitudes_pos, _, _ = self.ts.yearly_frequency_spectrum(365, on_detrended = on_detrended)
 
         # Crear nueva figura para este plot
         self.ax.plot(

@@ -85,7 +85,7 @@ class LSTMForecaster:
 
                 epoch_loss += loss.item() * xb.size(0)
 
-            if verbose and epoch % 10 == 0:
+            if verbose and epoch % 20 == 0:
                 print(f"Epoch {epoch}/{epochs} - Loss: {epoch_loss / len(self.train_loader.dataset):.6f}")
 
     def evaluate(self):
@@ -150,6 +150,38 @@ class LSTMForecaster:
         ).flatten()
 
         return future_predictions
+
+    def forecast_from_input(self, input_sequence, steps=10):
+        """Predecir hacia el futuro dado un nuevo input"""
+        if self.model is None:
+            raise ValueError("Model not initialized. Call init_model() first.")
+
+        self.model.eval()
+        future_predictions = []
+
+        # Convert input to tensor and shape [1, look_back, 1]
+        if isinstance(input_sequence, (list, np.ndarray)):
+            input_sequence = torch.FloatTensor(np.array(input_sequence).reshape(1, self.look_back, 1))
+        elif isinstance(input_sequence, torch.Tensor):
+            input_sequence = input_sequence.reshape(1, self.look_back, 1).float()
+        else:
+            raise ValueError("Unsupported input type for input_sequence")
+
+        # Normalize using fitted scaler
+        input_sequence = self.scaler.transform(input_sequence.cpu().numpy().reshape(-1, 1))
+        last_sequence = torch.tensor(input_sequence.reshape(1, self.look_back, 1)).to(self.device)
+
+        with torch.no_grad():
+            for _ in range(steps):
+                pred = self.model(last_sequence)
+                future_predictions.append(pred.item())
+
+                new_input = pred.unsqueeze(-1)  # [1, 1, 1]
+                last_sequence = torch.cat([last_sequence[:, 1:, :], new_input], dim=1)
+
+        # Inverse transform the predictions
+        return self.scaler.inverse_transform(np.array(future_predictions).reshape(-1, 1)).flatten()
+
 
 
 class TimeSeriesDataset(Dataset):
