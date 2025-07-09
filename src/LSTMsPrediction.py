@@ -182,6 +182,21 @@ class LSTMForecaster:
         # Inverse transform the predictions
         return self.scaler.inverse_transform(np.array(future_predictions).reshape(-1, 1)).flatten()
 
+    def load_model(self, path, input_size, hidden_sizes, output_size, dropout=0.0):
+        checkpoint = torch.load(path)
+        self.look_back = checkpoint['look_back']
+        self.scaler = checkpoint['scaler']
+
+        self.model = ModeloLSTM(
+            input_size=input_size,
+            hidden_sizes=hidden_sizes,
+            output_size=output_size,
+            dropout=dropout
+        ).to(self.device)
+
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.model.eval()
+
 
 
 class TimeSeriesDataset(Dataset):
