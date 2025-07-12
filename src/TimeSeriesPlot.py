@@ -7,9 +7,9 @@ import mplfinance as mpf
 from src import TimeSeries
 
 class TimeSeriesPlot:
-    def __init__(self, ts: "TimeSeries"):
+    def __init__(self, ts: "TimeSeries", figsize=(14, 6)):
         self.ts = ts
-        self.fig, self.ax = plt.subplots(figsize=(14, 6))
+        self.fig, self.ax = plt.subplots(figsize=figsize)
 
     # --- --- Dominio de Tiempo --- ---
 
@@ -17,41 +17,34 @@ class TimeSeriesPlot:
         self.ax.plot(self.ts.dates, self.ts.values, label=self.ts.name, **kwargs)
         self._set_axes_for_time_domain()
 
-    def add_another(self, other_ts: "TimeSeries", color='red'):
+    def add_another(self, other_ts: "TimeSeries", **kwargs):
         """
         Agrega otra serie temporal al gráfico actual.
         """
-        self.ax.plot(other_ts.dates, other_ts.values, label=other_ts.name, color=color)
+        self.ax.plot(other_ts.dates, other_ts.values, label=other_ts.name, **kwargs)
         self._set_axes_for_time_domain()
 
 
-    def add_detrended(self, grade, color='#696969', alpha=1):
+    def add_detrended(self, grade, **kwargs):
         ts_detrended = self.ts.detrend_with_regression_fitting(grade)
-        self.ax.plot(self.ts.dates, ts_detrended.values, label=ts_detrended.name, color=color, alpha=alpha)
+        self.ax.plot(self.ts.dates, ts_detrended.values, label=ts_detrended.name, **kwargs)
         self._set_axes_for_time_domain()
 
-    def add_tendency(self, grade, color='black', linestyle='--'):
+    def add_tendency(self, grade, **kwargs):
         tendency = self.ts.tendency_with_regression_fitting(grade)
-        self.ax.plot(self.ts.dates, tendency, label=f'Tendencia de {self.ts.name} (grado {grade})', color=color, linestyle=linestyle)
+        self.ax.plot(self.ts.dates, tendency, label=f'Tendencia de {self.ts.name} (grado {grade})', **kwargs)
         self._set_axes_for_time_domain()
 
-    def add_low_pass_filtered(self, cutoff_freq: float, sampling_rate: float = 365, linestyle='-', color=None):
+    def add_low_pass_filtered(self, cutoff_freq: float, sampling_rate: float = 365, **kwargs):
         """
         Agrega la serie suavizada con un filtro pasa bajos FFT.
         """
         filtered_values = self.ts.low_pass_filter(cutoff_freq, sampling_rate)
 
-        plot_kwargs = {
-            'label': f'{self.ts.name} filtrada pasa-bajos (corte={cutoff_freq:.2f})',
-            'linestyle': linestyle,
-        }
-        if color is not None:
-            plot_kwargs['color'] = color
-
-        self.ax.plot(self.ts.dates, filtered_values, **plot_kwargs)
+        self.ax.plot(self.ts.dates, filtered_values, **kwargs, label=f'{self.ts.name} filtrada pasa-bajo hasta {cutoff_freq}')
         self._set_axes_for_time_domain()
 
-    def add_band_pass_filtered(self, low_cutoff: float, high_cutoff: float, freq_per_year: int = 365,  linestyle='-'):
+    def add_band_pass_filtered(self, low_cutoff: float, high_cutoff: float, freq_per_year: int = 365,  **kwargs):
         """
         Agrega la serie suavizada con un filtro pasa bajos FFT.
         """
@@ -61,11 +54,11 @@ class TimeSeriesPlot:
             self.ts.dates,
             filtered_values,
             label=f'{self.ts.name} filtrada (cortes entre [{low_cutoff:.2f}, {high_cutoff:.2f}])',
-            linestyle=linestyle
+            **kwargs
         )
         self._set_axes_for_time_domain()
 
-    def add_ema(self, window, linestyle='-'):
+    def add_ema(self, window, **kwargs):
         """
         Agrega una media móvil exponencial (EMA).
         """
@@ -76,7 +69,7 @@ class TimeSeriesPlot:
         ema_values = ema_values[:min_len]
         dates = self.ts.dates[:min_len]
 
-        self.ax.plot(dates, ema_values, linestyle=linestyle, label=f'{self.ts.name} EMA ({window})')
+        self.ax.plot(dates, ema_values, label=f'{self.ts.name} EMA ({window})', **kwargs)
         self._set_axes_for_time_domain()
 
     def add_candlestick(self):
@@ -131,8 +124,8 @@ class TimeSeriesPlot:
     # --- --- Dominio de Frecuencia --- ---
     # Crear nuevo TimeSeriesPlot para esto, no usar el mismo que para dom de tiempo.
 
-    def add_yearly_frequency_spectrum(self, low_freqs_limit=50, ticks_freq= 1, color='purple', on_detrended = True):
-        frecuencias_pos, magnitudes_pos, _, _ = self.ts.yearly_frequency_spectrum(365, on_detrended = on_detrended)
+    def add_yearly_frequency_spectrum(self, low_freqs_limit=50, ticks_freq= 1, color='purple'):
+        frecuencias_pos, magnitudes_pos, _, _ = self.ts.yearly_frequency_spectrum(365)
 
         # Crear nueva figura para este plot
         self.ax.plot(

@@ -124,20 +124,16 @@ class TimeSeries:
         return corr_normalized, lags
 
     # --- --- --- Frequency Domain operations --- --- ---
-    def yearly_frequency_spectrum(self, freq_per_year=365, on_detrended = True, on_detrended_grade = 2):
+    def yearly_frequency_spectrum(self, freq_per_year=365):
         """
         Calcula el espectro de frecuencias (en ciclos por año) tomando `freq_per_year` como
         el número de observaciones por año (365 si es diaria, 12 si es mensual, etc.).
-
-        El parámetro `on_detrended` determina si se aplica sobre la serie hecha estacionaria
         """
         n = len(self.values)
         dt = 1 / freq_per_year  # intervalo en años entre observaciones
 
         # FFT y frecuencias en ciclos por año
-        fft_result = np.fft.fft(
-            self.detrend_with_regression_fitting(on_detrended_grade).values if on_detrended else self.values
-        )
+        fft_result = np.fft.fft(self.values)
         fft_freq = np.fft.fftfreq(n, d=dt)
         magnitudes = np.abs(fft_result) / n
 
